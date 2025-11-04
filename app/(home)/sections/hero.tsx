@@ -8,8 +8,13 @@ import Image from "next/image";
 import { Section } from "@/components/ui/section";
 import { Heading } from "@/components/ui/heading";
 import { Paragraph, ResponsiveParagraph } from "@/components/ui/paragraph";
+import { useRouter } from "next/navigation";
 
 export default function HeroSection() {
+    const router = useRouter();
+    const handleBrowseJobs = () => {
+    router.push("/nearby-jobs"); // Navigate to nearby jobs page
+  };
   return (
     <Section>
       {/* Two Grid Layout - Side by Side */}
@@ -65,7 +70,10 @@ export default function HeroSection() {
               roles all on your terms.
             </ResponsiveParagraph>
             <div className="flex items-center gap-4">
-              <CustomButton rightIcon={ChevronRight}>
+              <CustomButton 
+              rightIcon={ChevronRight}
+              onClick={handleBrowseJobs}
+              >
                 Browse Nearby Jobs
               </CustomButton>
 

@@ -195,4 +195,4 @@ export function Footer() {
       </div>
     </Section>
   );
-}
+} 
