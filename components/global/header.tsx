@@ -15,10 +15,10 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Why Medfaster?", href: "/" },
-  { label: "Our Subscriptions", href: "/" },
-  { label: "Getting Hired", href: "/" },
-  { label: "Find Jobs", href: "/" },
+  { label: "Why Medfaster?", href: "/coming-soon" },
+  { label: "Our Subscriptions", href: "/coming-soon" },
+  { label: "Getting Hired", href: "/coming-soon" },
+  { label: "Find Jobs", href: "/nearby-jobs" },
 ];
 
 export default function Header() {
