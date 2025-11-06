@@ -1,9 +1,15 @@
+"use client";
+
 import  Header  from "@/components/global/header";
 import { Footer } from "@/components/global/footer";
-import { NearbyJobs } from "../sections/nearby-jobs";
+import dynamic from "next/dynamic";
 import { Heading } from "@/components/ui/heading";
 import { ResponsiveParagraph } from "@/components/ui/paragraph";
-import { Section } from "@/components/ui/section";
+import Link from "next/link";
+
+const NearbyJobs = dynamic(() => import("../sections/nearby-jobs").then(mod => ({ default: mod.NearbyJobs })), {
+  ssr: false,
+});
 
 export default function NearbyJobsPage() {
   return (
@@ -26,14 +32,14 @@ export default function NearbyJobsPage() {
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2">
-        <a
+        <Link
           href="/"
           className="hover:text-[#F4781B] transition-colors"
         >
           <ResponsiveParagraph size="sm" className="text-gray-600">
             Home
           </ResponsiveParagraph>
-        </a>
+        </Link>
         <span className="text-gray-400">
           <ResponsiveParagraph size="sm">/</ResponsiveParagraph>
         </span>

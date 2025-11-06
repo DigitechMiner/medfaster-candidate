@@ -5,19 +5,9 @@ import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { Section } from "@/components/ui/section";
 import InputIcon from "@/components/ui/input-icon";
 import { Search, MapPin } from "lucide-react";
 import { ResponsiveParagraph } from "@/components/ui/paragraph";
-import { Heading } from "@/components/ui/heading";
-
-// TypeScript-safe Leaflet icon fix
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
 
 // Types
 interface Job {
@@ -134,6 +124,15 @@ export function NearbyJobs() {
   const [filteredJobs, setFilteredJobs] = useState<Job[]>(sampleJobs);
 
   useEffect(() => {
+    // TypeScript-safe Leaflet icon fix - only run on client
+    if (typeof window !== 'undefined') {
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
+    }
     setMounted(true);
   }, []);
 
