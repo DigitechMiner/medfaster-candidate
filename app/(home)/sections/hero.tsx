@@ -108,7 +108,7 @@ export default function HeroSection() {
             <div className="md:flex-[3] relative bg-[#f5f5f5] rounded-lg flex items-center justify-center">
               <Image
                 src="/images/hero/mobile-address.png"
-                alt="MedFasterrr app interface"
+                alt="MedFaster app interface"
                 width={280}
                 height={450}
                 className="object-contain w-full rounded-lg max-w-[380px] aspect-[280/450]"

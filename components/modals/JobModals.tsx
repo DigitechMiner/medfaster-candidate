@@ -35,7 +35,7 @@ export function ProfileCardModal({
         <div className="text-center mb-6">
           <Image 
             src="/images/ui/medfaster-logo.png" 
-            alt="MedFasterr" 
+            alt="MedFaster" 
             width={120} 
             height={40}
             className="mx-auto mb-4"
@@ -164,7 +164,7 @@ export function AppDownloadModal({
         <div className="text-center mb-6">
           <Image 
             src="/images/ui/medfaster-logo.png" 
-            alt="MedFasterr" 
+            alt="MedFaster" 
             width={120} 
             height={40}
             className="mx-auto mb-4"
@@ -184,7 +184,7 @@ export function AppDownloadModal({
 
         <p className="text-center text-sm text-gray-600 mb-2 font-semibold">Apply on the App</p>
         <p className="text-center text-xs text-gray-500 mb-6">
-          To apply for this job and view the full description, please scan and download the MedFasterr app
+          To apply for this job and view the full description, please scan and download the MedFaster app
         </p>
 
         {/* QR Codes */}

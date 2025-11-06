@@ -130,7 +130,7 @@ export function Footer() {
         <div className="relative w-40 md:w-48 lg:w-[200px] h-8 sm:w-40 sm:h-10">
               <Image
                 src="/images/ui/medfaster-logo.png"
-                alt="MeDFasterrrrr Logo"
+                alt="MeDFaster Logo"
                 fill
                 className="object-contain object-left"
                 quality={100}
