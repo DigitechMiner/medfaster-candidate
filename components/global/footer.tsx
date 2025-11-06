@@ -1,14 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { FaFacebook, FaLinkedin, FaInstagram } from "react-icons/fa";
 import { ChevronRight } from "lucide-react";
-import Image from "next/image";
 import { Heading } from "@/components/ui/heading";
 import { Section } from "@/components/ui/section";
 import { CustomButton } from "@/components/ui/custom-button";
 import { ResponsiveParagraph } from "@/components/ui/paragraph";
+
+export type FooterLink = { label: string; href: string };
+export type FooterColumn = { title: string; links: FooterLink[] };
+
+export const landingFooterColumns: FooterColumn[] = [
+  {
+    title: 'Platform',
+    links: [
+      { label: 'Hospitals & Recruiters', href: '#hospitals-recruiters' },
+      { label: 'Medical Professionals', href: '#medical-professionals' },
+      { label: 'Patients', href: '#patients' },
+      { label: 'AI Features', href: '#ai-features' },
+      { label: 'Subscription Plans', href: '#subscription-plans' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'About MedFaster', href: '#about' },
+      { label: 'Mission & Vision', href: '#mission-vision' },
+      { label: 'Our Team', href: '#team' },
+      { label: 'Careers', href: '#careers' },
+      { label: 'Blog', href: '#blog' },
+      { label: 'Contact Us', href: '#contact' },
+    ],
+  },
+  {
+    title: 'Support',
+    links: [
+      { label: 'Help Center', href: '#help-center' },
+      { label: 'Privacy Policy', href: '#privacy' },
+      { label: 'Terms & Conditions', href: '#terms' },
+      { label: 'Refund Policy', href: '#refund' },
+      { label: 'Data Protection (HIPAA/GDPR)', href: '#data-protection' },
+      { label: 'Report an Issue', href: '#report-issue' },
+    ],
+  },
+];
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -27,7 +65,6 @@ export function Footer() {
     setMessage("");
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setMessage(`✓ Successfully subscribed with ${email}!`);
@@ -41,28 +78,26 @@ export function Footer() {
 
   return (
     <Section className="border-t bg-card">
-      <div className="container">
-        {/* Newsletter Section */}
+      <div className="w-full">
         <div className="flex flex-col gap-6 border-b pb-8 mb-8 sm:pb-12 sm:mb-12 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1">
             <Heading as="h2" size="md" className="leading-tight">
-              Get Career Insights & Top
-              
-              <span className="text-[#F4781B]">{" "}Job Alerts</span>
+            Get Career Insights & Top{" "}
+              <span className="text-[#F4781B]">Job Alerts</span>
             </Heading>
           </div>
 
-          <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[420px]">
+          <div className="flex flex-1 flex-col gap-2 lg:min-w-[420px]">
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col w-full gap-3 sm:flex-row"
+              className="flex flex-col gap-3 sm:flex-row"
             >
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email address"
-                className="w-full rounded-full h-12 lg:w-[420px] px-5 text-sm sm:text-base sm:flex-1"
+                className="rounded-full h-12 lg:w-[420px] px-5 text-sm sm:text-base sm:flex-1"
                 disabled={isSubmitting}
                 required
               />
@@ -91,11 +126,8 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Footer Bottom */}
         <div className="space-y-6 sm:space-y-8">
-          {/* Row 1: Logo Image and Navigation */}
-          <div className="flex flex-col gap-6 sm:gap-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative w-40 md:w-48 lg:w-[200px] h-8 sm:w-40 sm:h-10">
+        <div className="relative w-40 md:w-48 lg:w-[200px] h-8 sm:w-40 sm:h-10">
               <Image
                 src="/images/ui/medfaster-logo.png"
                 alt="MeDFasterrrrr Logo"
@@ -105,94 +137,107 @@ export function Footer() {
                 priority
               />
             </div>
-
-            <nav className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8">
-              <a
-                href="#about"
-                className="text-sm sm:text-base hover:text-primary transition-colors"
-              >
-                About Us
-              </a>
-              <a
-                href="#jobs"
-                className="text-sm sm:text-base hover:text-primary transition-colors"
-              >
-                Find Jobs
-              </a>
-              <a
-                href="#blog"
-                className="text-sm sm:text-base hover:text-primary transition-colors"
-              >
-                Blog
-              </a>
-              <a
-                href="#contact"
-                className="text-sm sm:text-base hover:text-primary transition-colors"
-              >
-                Contact Us
-              </a>
-            </nav>
-          </div>
-
-          {/* Row 2: Email and Phone in Same Row */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:gap-8 md:gap-12">
-            <div className="space-y-1">
-              <ResponsiveParagraph size="xs" className="text-muted-foreground font-medium">
-                Email Address
-              </ResponsiveParagraph>
-              <ResponsiveParagraph size="sm" className="break-all">
-                info@medfasterrrrr.com
-              </ResponsiveParagraph>
+          {/* Two-column layout: Left (logo + contact), Right (links) */}
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+            {/* Left: Logo + Contact */}
+           
+            <div className="space-y-6 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:gap-12 md:gap-16">
+                <div className="space-y-1">
+                  <ResponsiveParagraph
+                    size="xs"
+                    className="text-muted-foreground font-medium"
+                  >
+                    Email Address
+                  </ResponsiveParagraph>
+                  <ResponsiveParagraph size="sm" className="whitespace-nowrap">
+                    info@medfaster.com
+                  </ResponsiveParagraph>
+                </div>
+                <div className="space-y-1 mt-4 sm:mt-0">
+                  <ResponsiveParagraph
+                    size="xs"
+                    className="text-muted-foreground font-medium"
+                  >
+                    Phone Number
+                  </ResponsiveParagraph>
+                  <ResponsiveParagraph size="sm" className="whitespace-nowrap">
+                    (416) 555-0123
+                  </ResponsiveParagraph>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <ResponsiveParagraph size="xs" className="text-muted-foreground font-medium">
-                Phone Number
-              </ResponsiveParagraph>
-              <ResponsiveParagraph size="sm">(416) 555-0123</ResponsiveParagraph>
+
+            {/* Right: Footer Links - Three Columns */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+              {landingFooterColumns.map((column) => (
+                <div key={column.title} className="space-y-4">
+                  <ResponsiveParagraph
+                    size="sm"
+                    className="font-semibold text-[#252B37]"
+                  >
+                    {column.title}
+                  </ResponsiveParagraph>
+                  <nav className="flex flex-col gap-3">
+                    {column.links.map((link) => (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        className="text-sm text-[#717680] hover:text-[#F4781B] transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Divider Line */}
           <div className="border-t" />
 
-          {/* Row 3: Copyright and Social Icons */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <ResponsiveParagraph size="xs" className="text-muted-foreground order-2 sm:order-1">
-              Copyright © 2025 MeDFaster, All Rights Reserved.
-            </ResponsiveParagraph>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <ResponsiveParagraph
+                size="xs"
+                className="text-muted-foreground order-2 sm:order-1"
+              >
+                Copyright © 2025 MeDFaster, All Rights Reserved.
+              </ResponsiveParagraph>
 
-            <div className="flex gap-3 sm:gap-4 order-1 sm:order-2">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:-translate-y-1 transition-transform"
-                aria-label="Facebook"
-              >
-                <FaFacebook className="h-5 w-5 sm:h-6 sm:w-6 text-[#1877F2]" />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:-translate-y-1 transition-transform"
-                aria-label="LinkedIn"
-              >
-                <FaLinkedin className="h-5 w-5 sm:h-6 sm:w-6 text-[#0A66C2]" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:-translate-y-1 transition-transform"
-                aria-label="Instagram"
-              >
-                <FaInstagram className="h-5 w-5 sm:h-6 sm:w-6 text-[#E4405F]" />
-              </a>
+              <div className="flex gap-3 sm:gap-4 order-1 sm:order-2">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:-translate-y-1 transition-transform"
+                  aria-label="Facebook"
+                >
+                  <FaFacebook className="h-5 w-5 sm:h-6 sm:w-6 text-[#1877F2]" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:-translate-y-1 transition-transform"
+                  aria-label="LinkedIn"
+                >
+                  <FaLinkedin className="h-5 w-5 sm:h-6 sm:w-6 text-[#0A66C2]" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:-translate-y-1 transition-transform"
+                  aria-label="Instagram"
+                >
+                  <FaInstagram className="h-5 w-5 sm:h-6 sm:w-6 text-[#E4405F]" />
+                </a>
+              </div>
             </div>
           </div>
-        </div>
+       
       </div>
     </Section>
   );
-} 
+}
+
+export default Footer;

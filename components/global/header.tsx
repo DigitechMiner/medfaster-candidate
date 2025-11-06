@@ -1,35 +1,24 @@
 "use client";
 
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X, Download } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/custom-button";
 import Image from "next/image";
 
-const navLinks = [
+type NavLink = {
+  label: string;
+  href: string;
+  submenu?: { label: string; href: string }[];
+};
+
+const navLinks: NavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Medical Organizations", href: "/" },
-  { label: "Medical Professionals", href: "/" },
-  { label: "Patients", href: "/" },
-  {
-    label: "AI Features",
-    href: "/",
-    submenu: [
-      { label: "Feature 1", href: "/" },
-      { label: "Feature 2", href: "/" },
-    ],
-  },
-  {
-    label: "Company",
-    href: "/",
-    submenu: [
-        { label: "About Us", href: "/" },
-        { label: "Careers", href: "/" },
-        { label: "Blog", href: "/" },
-        { label: "Contact Us", href: "/" },
-    ],
-  },
+  { label: "Why Medfaster?", href: "/" },
+  { label: "Our Subscriptions", href: "/" },
+  { label: "Getting Hired", href: "/" },
+  { label: "Find Jobs", href: "/" },
 ];
 
 export default function Header() {
@@ -68,7 +57,7 @@ export default function Header() {
       </div>
 
       {/* Desktop Navigation */}
-      <nav className="hidden xl:flex bg-gray-100 rounded-full p-2 items-center gap-1 relative">
+      <nav className="hidden xl:flex bg-gray-100 rounded-full p-1 items-center gap-1 relative">
         {navLinks.map((link) => {
           const hasSubmenu = link.submenu && link.submenu.length > 0;
           const isSubmenuOpen = openSubmenu === link.label;
@@ -131,10 +120,14 @@ export default function Header() {
         })}
       </nav>
 
-      {/* Download Button - Desktop Only */}
+      {/* Action Buttons - Desktop Only */}
       <div className="flex items-center gap-2">
-        <CustomButton className="hidden md:flex my-0 py-2">Find Jobs</CustomButton>
-        <CustomButton className="hidden md:flex my-0 py-2" variant="secondary">Login</CustomButton>
+        <CustomButton className="hidden md:flex my-0 py-1" rightIcon={Download}>
+          Download App
+        </CustomButton>
+        <CustomButton className="hidden md:flex my-0 py-2" variant="secondary">
+          Find Jobs & Login
+        </CustomButton>
       </div>
 
       {/* Mobile Navigation Drawer */}
@@ -206,11 +199,11 @@ export default function Header() {
             })}
           </div>
           <div className="w-full max-w-sm py-4 px-4 flex flex-col gap-2">
-            <CustomButton className="w-full justify-center my-1">
-              Find Jobs
+            <CustomButton className="w-full justify-center my-1" rightIcon={Download}>
+              Download App
             </CustomButton>
             <CustomButton className="w-full justify-center my-1" variant="secondary">
-              Login
+              Find Jobs & Login
             </CustomButton>
           </div>
         </div>
