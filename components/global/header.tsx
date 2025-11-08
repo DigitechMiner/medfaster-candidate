@@ -1,8 +1,9 @@
 "use client";
 
 import { ChevronDown, Menu, X, Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/custom-button";
 import Image from "next/image";
@@ -15,23 +16,43 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Why Medfaster?", href: "/coming-soon" },
-  { label: "Our Subscriptions", href: "/coming-soon" },
-  { label: "Getting Hired", href: "/coming-soon" },
-  { label: "Find Jobs", href: "/nearby-jobs" },
+  { label: "Why Medfaster?", href: "/coming_soon" },
+  { label: "Our Subscriptions", href: "/coming_soon" },
+  { label: "Getting Hired", href: "/coming_soon" },
+  { label: "Find Jobs", href: "/nearby_jobs" },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  children?: ReactNode;
+}
+
+export default function Header({ children }: HeaderProps) {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [active, setActive] = useState("Home");
+  const [active, setActive] = useState("");
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+
+  // Set active state based on current pathname
+  useEffect(() => {
+    const currentLink = navLinks.find((link) => {
+      if (link.href === "/") {
+        return pathname === "/";
+      }
+      return pathname.startsWith(link.href);
+    });
+    
+    if (currentLink) {
+      setActive(currentLink.label);
+    }
+  }, [pathname]);
 
   const toggleSubmenu = (label: string) => {
     setOpenSubmenu((prev) => (prev === label ? null : label));
   };
 
   return (
-    <header className="relative w-full bg-white flex items-center justify-between rounded-lg md:rounded-xl lg:rounded-2xl xl:rounded-3xl p-2 md:px-4 lg:px-6 xl:px-8">
+    <div className="w-full bg-white rounded-lg md:rounded-xl lg:rounded-2xl xl:rounded-3xl ">
+   <header className="relative w-full flex items-center justify-between p-2 md:p-4 lg:p-6 xl:p-8 px-4 md:px-8 lg:px-16 xl:px-16">
       {/* Left Side - Mobile Menu + Logo */}
       <div className="flex items-center gap-2">
         {/* Mobile Menu Button */}
@@ -49,7 +70,7 @@ export default function Header() {
             height={50}
             width={200}
             alt="MeDFaster"
-            objectFit="contain"
+            className="object-contain"
             quality={100}
             priority
           />
@@ -209,5 +230,7 @@ export default function Header() {
         </div>
       )}
     </header>
+    {children}
+    </div>
   );
 }

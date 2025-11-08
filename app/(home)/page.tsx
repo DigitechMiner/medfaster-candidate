@@ -11,11 +11,12 @@ import {
   CareerOnTheGo,
   NextCareer,
 } from "./sections"
+import { Screen } from "@/components/global/screen"
 export default function Home() {
   return (
-    <div className="min-h-screen bg-neutral-100 p-2 md:p-4 lg:p-6 xl:p-8 gap-2 md:gap-4 lg:gap-6 xl:gap-8 flex flex-col">
-      <Header />
-      <HeroSection />
+    <Screen>
+      <Header >
+      <HeroSection /></Header>
       <CompanyLogos />
       <GetHiredSection />
       <AIHelpsSection />
@@ -25,6 +26,6 @@ export default function Home() {
       <NextCareer />
       <CareerOnTheGo />
       <Footer />
-    </div>
+    </Screen>
   );
 }
