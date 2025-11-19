@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Menu, X, Download } from "lucide-react";
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -224,6 +224,10 @@ export default function Header({ children }: HeaderProps) {
         )}
       </header>
 
+      {/* Render children (like HeroSection) below Header */}
+      <main>{children}</main>
+
+      {/* Login Modal */}
       <LoginModal isOpen={isOpen} onClose={closeLogin} />
     </>
   );
