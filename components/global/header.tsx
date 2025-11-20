@@ -3,7 +3,6 @@
 import { ChevronDown, Menu, X, Download } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/custom-button";
 import Image from "next/image";
@@ -29,7 +28,6 @@ interface HeaderProps {
 }
 
 export default function Header({ children }: HeaderProps) {
-  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [active, setActive] = useState("");
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);

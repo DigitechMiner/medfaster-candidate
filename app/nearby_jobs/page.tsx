@@ -5,7 +5,7 @@ import { Footer } from "@/components/global/footer";
 import { Screen } from "@/components/global/screen";
 import dynamic from "next/dynamic";
 import { Heading } from "@/components/ui/heading";
-import { Paragraph, ResponsiveParagraph } from "@/components/ui/paragraph";
+import { Paragraph } from "@/components/ui/paragraph";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Section } from "@/components/ui/section";
