@@ -3,11 +3,11 @@
 import { ChevronDown, Menu, X, Download } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
+
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/custom-button";
-import Image from "next/image";
-import { useLoginModal } from "@/contexts/login-modal-context";
-import LoginModal from "@/components/LoginModal";
+import LoginModal from "@/components/otpModal/LoginModal";
 
 type NavLink = {
   label: string;
@@ -32,7 +32,10 @@ export default function Header({ children }: HeaderProps) {
   const [active, setActive] = useState("");
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
-  const { isOpen, openLogin, closeLogin } = useLoginModal();
+  // Local modal state (replaces useLoginModal context)
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const openLogin = () => setIsLoginOpen(true);
+  const closeLogin = () => setIsLoginOpen(false);
 
   const toggleSubmenu = (label: string) => {
     setOpenSubmenu((prev) => (prev === label ? null : label));
@@ -67,6 +70,7 @@ export default function Header({ children }: HeaderProps) {
           {navLinks.map((link) => {
             const hasSubmenu = link.submenu && link.submenu.length > 0;
             const isSubmenuOpen = openSubmenu === link.label;
+
             return (
               <div key={link.label} className="relative">
                 <Button
@@ -90,9 +94,7 @@ export default function Header({ children }: HeaderProps) {
                     <Link href={link.href}>{link.label}</Link>
                     {hasSubmenu && (
                       <ChevronDown
-                        className={`${
-                          isSubmenuOpen ? "rotate-180" : ""
-                        } transition-transform`}
+                        className={`${isSubmenuOpen ? "rotate-180" : ""} transition-transform`}
                         size={18}
                       />
                     )}
@@ -146,6 +148,7 @@ export default function Header({ children }: HeaderProps) {
               {navLinks.map((link) => {
                 const hasSubmenu = link.submenu && link.submenu.length > 0;
                 const isSubmenuOpen = openSubmenu === link.label;
+
                 return (
                   <div key={link.label} className="mb-2">
                     <Button
@@ -170,9 +173,7 @@ export default function Header({ children }: HeaderProps) {
                         <Link href={link.href}>{link.label}</Link>
                         {hasSubmenu && (
                           <ChevronDown
-                            className={`${
-                              isSubmenuOpen ? "rotate-180" : ""
-                            } transition-transform`}
+                            className={`${isSubmenuOpen ? "rotate-180" : ""} transition-transform`}
                             size={18}
                           />
                         )}
@@ -206,6 +207,7 @@ export default function Header({ children }: HeaderProps) {
                 );
               })}
             </div>
+
             <div className="w-full max-w-sm py-4 px-4 flex flex-col gap-2">
               <CustomButton className="w-full justify-center my-1" rightIcon={Download}>
                 Download App
@@ -226,7 +228,7 @@ export default function Header({ children }: HeaderProps) {
       <main>{children}</main>
 
       {/* Login Modal */}
-      <LoginModal isOpen={isOpen} onClose={closeLogin} />
+      <LoginModal isOpen={isLoginOpen} onClose={closeLogin} />
     </>
   );
 }
