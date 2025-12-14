@@ -180,7 +180,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <div className="w-[45%] h-full bg-white p-8">
           <div className="relative w-full h-full rounded-2xl overflow-hidden">
             <Image
-              src="/images/hero/healthCare.png"
+              src="/images/ui/ModalLogin.png"
               alt="Healthcare professional with patient"
               fill
               className="object-cover"
