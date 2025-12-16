@@ -1,10 +1,10 @@
 'use client';
 
 import { create } from 'zustand';
-import { devtools, persist, createJSONStorage } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 import { useApiStore } from './apiStore';
 import { ENDPOINTS } from '@/api/endpoints';
-import {  
+import {
   AuthState,
   AuthStore,
   OtpCredential,
@@ -52,7 +52,7 @@ const extractPayload = <T>(payload: any): T => {
 
 const initialState: AuthState = {
   user: null,
-  userType: 'candidate', // Fixed for candidate website
+  userType: 'candidate',
   otpCredential: null,
   otpRequestPayload: null,
   otpSending: false,
@@ -62,120 +62,107 @@ const initialState: AuthState = {
 
 export const useAuthStore = create<AuthStore>()(
   devtools(
-    persist(
-      (set, get) => ({
-        ...initialState,
-        
-        setOtpCredential: (value) => set({ otpCredential: value }),
-        setOtpError: (value) => set({ otpError: value }),
-        setUser: (user) => set({ user }),
-        setUserType: (userType) => set({ userType }),
+    (set, get) => ({
+      ...initialState,
 
-        sendOtp: async ({ target, targetType, countryCode }) => {
-          set({ otpSending: true, otpError: null });
-          
-          try {
-            const resolvedType = targetType ?? (EMAIL_REGEX.test(target) ? 'email' : 'phone');
-            const resolvedCountryCode =
-              resolvedType === 'phone' ? countryCode || DEFAULT_COUNTRY_CODE : undefined;
+      setOtpCredential: (value) => set({ otpCredential: value }),
+      setOtpError: (value) => set({ otpError: value }),
+      setUser: (user) => set({ user }),
+      setUserType: (userType: UserType) => set({ userType }),
 
-            const apiPayload =
-              resolvedType === 'email'
-                ? { email: target }
-                : { phone: target, country_code: resolvedCountryCode };
+      sendOtp: async ({ target, targetType, countryCode }) => {
+        set({ otpSending: true, otpError: null });
 
-            const responseData = await useApiStore.getState().post(
-              ENDPOINTS.CANDIDATE.SEND_OTP,
-              apiPayload
-            );
-            const response = responseData.data as ApiEnvelope;
+        try {
+          const resolvedType = targetType ?? (EMAIL_REGEX.test(target) ? 'email' : 'phone');
+          const resolvedCountryCode =
+            resolvedType === 'phone' ? countryCode || DEFAULT_COUNTRY_CODE : undefined;
 
-            if (!response?.success) {
-              const errorMessage =
-                response?.message || resolveStatusMessage(responseData.status, OTP_ERROR_MESSAGES);
-              set({ otpError: errorMessage });
-              return { ok: false, message: errorMessage };
-            }
+          const apiPayload =
+            resolvedType === 'email'
+              ? { email: target }
+              : { phone: target, country_code: resolvedCountryCode };
 
-            const credential: OtpCredential =
-              resolvedType === 'email'
-                ? { type: 'email', email: target }
-                : { type: 'phone', phone: target, countryCode: resolvedCountryCode ?? null };
+          const responseData = await useApiStore.getState().post(
+            ENDPOINTS.CANDIDATE.SEND_OTP,
+            apiPayload
+          );
+          const response = responseData.data as ApiEnvelope;
 
-            const payload: OtpRequestPayload = {
-              target,
-              targetType: resolvedType,
-              countryCode: resolvedType === 'phone' ? resolvedCountryCode : undefined,
-            };
-
-            set({
-              otpCredential: credential,
-              otpRequestPayload: payload,
-              otpLastSentAt: Date.now(),
-              userType: 'candidate',
-            });
-
-            return { ok: true, message: response.message || 'OTP sent successfully' };
-          } catch (error: any) {
-            const fallbackMessage = resolveStatusMessage(error.statusCode, OTP_ERROR_MESSAGES);
-            set({ otpError: fallbackMessage });
-            return { ok: false, message: fallbackMessage };
-          } finally {
-            set({ otpSending: false });
-          }
-        },
-
-        verifyOtp: async (code: string): Promise<VerifyOtpResult> => {
-          const { otpCredential } = get();
-
-          if (!otpCredential) {
-            return { ok: false, message: 'OTP session expired. Please resend the code.' };
+          if (!response?.success) {
+            const errorMessage =
+              response?.message || resolveStatusMessage(responseData.status, OTP_ERROR_MESSAGES);
+            set({ otpError: errorMessage });
+            return { ok: false, message: errorMessage };
           }
 
-          const payload =
-            otpCredential.type === 'email'
-              ? { email: otpCredential.email, otp: code }
-              : {
-                  phone: otpCredential.phone,
-                  otp: code,
-                  country_code: otpCredential.countryCode ?? undefined,
-                };
+          const credential: OtpCredential =
+            resolvedType === 'email'
+              ? { type: 'email', email: target }
+              : { type: 'phone', phone: target, countryCode: resolvedCountryCode ?? null };
 
-          try {
-            const res = await useApiStore.getState().post(
-              ENDPOINTS.CANDIDATE.VALIDATE_OTP,
-              payload
-            );
-            const json = res.data as ApiEnvelope<VerifyOtpData>;
-            const success =
-              typeof json?.success === 'boolean' ? json.success : isHttpSuccess(res.status);
+          const payload: OtpRequestPayload = {
+            target,
+            targetType: resolvedType,
+            countryCode: resolvedType === 'phone' ? resolvedCountryCode : undefined,
+          };
 
-            if (!success || !json?.data) {
-              return { ok: false, message: json?.message || 'Invalid OTP' };
-            }
+          set({
+            otpCredential: credential,
+            otpRequestPayload: payload,
+            otpLastSentAt: Date.now(),
+            userType: 'candidate',
+          });
 
-            set({ userType: 'candidate' });
-
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('isLoggedIn', 'true');
-            }
-
-            return { ok: true, data: json.data };
-          } catch (error: any) {
-            const message = error?.message || 'Network error';
-            return { ok: false, message };
-          }
-        },
-      }),
-      {
-        name: 'candidate-auth-storage', // Unique storage key
-        storage: createJSONStorage(() => localStorage),
-        partialize: (state) => ({
-          user: state.user,
-          userType: state.userType,
-        }),
+          return { ok: true, message: response.message || 'OTP sent successfully' };
+        } catch (error: any) {
+          const fallbackMessage = resolveStatusMessage(error.statusCode, OTP_ERROR_MESSAGES);
+          set({ otpError: fallbackMessage });
+          return { ok: false, message: fallbackMessage };
+        } finally {
+          set({ otpSending: false });
+        }
       },
-    ),
+
+      verifyOtp: async (code: string): Promise<VerifyOtpResult> => {
+        const { otpCredential } = get();
+
+        if (!otpCredential) {
+          return { ok: false, message: 'OTP session expired. Please resend the code.' };
+        }
+
+        const payload =
+          otpCredential.type === 'email'
+            ? { email: otpCredential.email, otp: code }
+            : {
+                phone: otpCredential.phone,
+                otp: code,
+                country_code: otpCredential.countryCode ?? undefined,
+              };
+
+        try {
+          const res = await useApiStore.getState().post(
+            ENDPOINTS.CANDIDATE.VALIDATE_OTP,
+            payload
+          );
+          const json = res.data as ApiEnvelope<VerifyOtpData>;
+          const success =
+            typeof json?.success === 'boolean' ? json.success : isHttpSuccess(res.status);
+
+          if (!success || !json?.data) {
+            return { ok: false, message: json?.message || 'Invalid OTP' };
+          }
+
+          // session is handled by backend cookies; just set userType in memory
+          set({ userType: 'candidate' });
+
+          return { ok: true, data: json.data };
+        } catch (error: any) {
+          const message = error?.message || 'Network error';
+          return { ok: false, message };
+        }
+      },
+    }),
     { name: 'CandidateAuthStore' }
-  ),
+  )
 );
