@@ -1,107 +1,104 @@
-// lib/chatSocket.ts (3000 - Candidate) - PRODUCTION READY
 import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
+let isInitializing = false;
 
-const getCookie = (name: string): string | null => {
-  // Only run in browser
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
+
+export const initChatSocket = async (): Promise<Socket | null> => {
+  if (socket?.connected) {
+    console.log('Socket already connected');
+    return socket;
+  }
+
+  if (isInitializing) {
+    console.log('Socket initialization in progress...');
     return null;
   }
-  
+
+  isInitializing = true;
+
   try {
-    const cookies = document.cookie.split('; ');
-    for (const cookie of cookies) {
-      const [key, value] = cookie.split('=');
-      if (key === name && value) {
-        return decodeURIComponent(value);
-      }
+    console.log('Fetching socket token...');
+    const res = await fetch('http://localhost:4000/api/v1/common/socket-token', {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      console.warn('Failed to get socket token:', res.status);
+      isInitializing = false;
+      return null;
     }
-    return null;
+
+    const data = await res.json();
+    const token = data.token;
+
+    if (!token) {
+      console.warn('No token in response');
+      isInitializing = false;
+      return null;
+    }
+
+    console.log('Initializing candidate socket...');
+    socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+      auth: {
+        token,
+        userType: 'candidate',
+      },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    socket.on('connect', () => {
+      console.log('✅ Candidate socket connected:', socket?.id);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('❌ Candidate socket error:', err.message);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Candidate socket disconnected:', reason);
+    });
+
+    // Wait for connection
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Socket connection timeout'));
+      }, 5000);
+
+      socket?.once('connect', () => {
+        clearTimeout(timeout);
+        resolve(true);
+      });
+
+      socket?.once('connect_error', (err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+    });
+
+    isInitializing = false;
+    return socket;
   } catch (error) {
-    console.error('Error reading cookie:', error);
+    console.error('Error initializing socket:', error);
+    isInitializing = false;
+    socket = null;
     return null;
   }
-};
-
-const getSocketUrl = (): string => {
-  return process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
 };
 
 export const getChatSocket = (): Socket | null => {
-  // Only run in browser
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  if (socket?.connected) {
-    console.log('✅ Returning existing connected socket');
-    return socket;
-  }
-  
-  const candidateToken = getCookie('candidate_token');
-  
-  if (!candidateToken) {
-    console.warn('⚠️ No candidate_token found');
-    console.log('🔍 Available cookies:', document.cookie.split('; ').map(c => c.split('=')[0]).join(', '));
-    return null;
-  }
-  
-  console.log('✅ Found candidate_token, length:', candidateToken.length);
-  
-  socket = io(getSocketUrl(), {
-    auth: {
-      token: candidateToken,
-      userType: 'candidate' as const
-    },
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    timeout: 20000,
-  });
-  
-  console.log('🔌 Candidate socket connecting to:', getSocketUrl());
-  
-  socket.on('connect', () => {
-    console.log('✅ Candidate socket connected (ID:', socket?.id, ')');
-  });
-  
-  socket.on('disconnect', (reason) => {
-    console.log('🔌 Candidate socket disconnected:', reason);
-  });
-  
-  socket.on('connect_error', (err) => {
-    console.error('❌ Candidate socket connect_error:', err.message);
-  });
-
-  socket.on('error', (error) => {
-    console.error('❌ Socket error event:', error);
-  });
-
-  socket.on('joined_conversation', (data) => {
-    console.log('✅ Successfully joined conversation:', data.conversationId);
-  });
-  
   return socket;
-};
-
-export const initChatSocket = (): Socket | null => {
-  // Only run in browser
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const s = getChatSocket();
-  if (!s) console.warn('⚠️ Socket unavailable - check if logged in');
-  return s;
 };
 
 export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
-    console.log('🔌 Socket disconnected and cleared');
   }
 };
