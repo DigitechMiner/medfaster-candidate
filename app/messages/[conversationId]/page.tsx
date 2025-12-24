@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { fetchMessages, sendMessage } from "@/api/chat";
+import { fetchMessages, sendMessage, editChatMessage, deleteChatMessage } from "@/api/chat";
 import { getChatSocket, initChatSocket } from "@/lib/chatSocket";
 
 interface Message {
   id: string;
   conversation_id: string;
-  sender_type: 'candidate' | 'recruiter';
+  sender_type: "candidate" | "recruiter";
   sender_id: string;
   message: string;
   is_deleted: boolean;
@@ -20,12 +20,17 @@ export default function ConversationPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params?.conversationId as string;
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [socketReady, setSocketReady] = useState(false);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -47,11 +52,11 @@ export default function ConversationPage() {
         const data = await fetchMessages(conversationId);
         if (!mounted) return;
         setMessages(data.messages || []);
-        console.log('📥 Loaded', data.messages?.length || 0, 'messages');
+        console.log("📥 Loaded", data.messages?.length || 0, "messages");
       } catch (err: any) {
         console.error("Failed to load messages:", err);
         if (mounted) {
-          setError(err?.message || 'Failed to load messages');
+          setError(err?.message || "Failed to load messages");
         }
       } finally {
         if (mounted) {
@@ -63,34 +68,34 @@ export default function ConversationPage() {
     async function setupSocket() {
       try {
         let socket = getChatSocket();
-        
+
         if (!socket?.connected) {
-          console.log('Socket not connected, initializing...');
+          console.log("Socket not connected, initializing...");
           socket = await initChatSocket();
         }
 
         if (!socket) {
-          console.warn('⚠️ Socket unavailable - real-time updates disabled');
+          console.warn("⚠️ Socket unavailable - real-time updates disabled");
           return;
         }
 
-        console.log('✅ Socket ready');
+        console.log("✅ Socket ready");
         setSocketReady(true);
 
         socket.emit("join_conversation", conversationId);
-        console.log('🔌 Joined conversation:', conversationId);
+        console.log("🔌 Joined conversation:", conversationId);
 
         const onReceived = (msg: Message) => {
-          console.log('📩 New message:', {
+          console.log("📩 New message:", {
             id: msg.id?.slice(0, 8),
             sender_type: msg.sender_type,
-            message: msg.message?.slice(0, 20)
+            message: msg.message?.slice(0, 20),
           });
-          
+
           if (msg.conversation_id === conversationId) {
-            setMessages(prev => {
-              if (prev.some(m => m.id === msg.id)) {
-                console.log('⚠️ Duplicate detected, skipping');
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === msg.id)) {
+                console.log("⚠️ Duplicate detected, skipping");
                 return prev;
               }
               return [...prev, msg];
@@ -99,15 +104,19 @@ export default function ConversationPage() {
         };
 
         const onUpdated = (msg: Message) => {
-          console.log('✏️ Message updated');
-          setMessages(prev => prev.map(m => (m.id === msg.id ? { ...m, ...msg } : m)));
+          console.log("✏️ Message updated");
+          setMessages((prev) =>
+            prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)),
+          );
         };
 
         const onDeleted = (payload: { messageId: string; conversationId: string }) => {
-          console.log('🗑️ Message deleted');
+          console.log("🗑️ Message deleted");
           if (payload.conversationId === conversationId) {
-            setMessages(prev =>
-              prev.map(m => (m.id === payload.messageId ? { ...m, is_deleted: true } : m)),
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === payload.messageId ? { ...m, is_deleted: true } : m,
+              ),
             );
           }
         };
@@ -122,11 +131,11 @@ export default function ConversationPage() {
             socket.off("message_received", onReceived);
             socket.off("message_updated", onUpdated);
             socket.off("message_deleted", onDeleted);
-            console.log('👋 Left conversation');
+            console.log("👋 Left conversation");
           }
         };
       } catch (err) {
-        console.error('Socket setup error:', err);
+        console.error("Socket setup error:", err);
       }
     }
 
@@ -139,21 +148,63 @@ export default function ConversationPage() {
   }, [conversationId]);
 
   const handleSend = async () => {
-    if (!input.trim() || !conversationId || sending) return;
+    if (!conversationId || sending) return;
 
-    const messageContent = input.trim();
+    const text = editingId ? editingText : input;
+    if (!text.trim()) return;
+
+    const trimmed = text.trim();
+
+    // edit mode
+    if (editingId) {
+      try {
+        await editChatMessage(editingId, trimmed);
+        console.log("✏️ Edit saved");
+        setEditingId(null);
+        setEditingText("");
+      } catch (err: any) {
+        console.error("Edit failed:", err);
+        alert(err?.message || "Failed to edit message");
+      }
+      return;
+    }
+
+    // normal send
     setInput("");
     setSending(true);
 
     try {
-      await sendMessage(conversationId, messageContent);
-      console.log('📤 Message sent successfully');
+      await sendMessage(conversationId, trimmed);
+      console.log("📤 Message sent successfully");
     } catch (err: any) {
       console.error("❌ Send failed:", err);
-      setInput(messageContent);
-      alert(err?.message || 'Failed to send message');
+      setInput(trimmed);
+      alert(err?.message || "Failed to send message");
     } finally {
       setSending(false);
+    }
+  };
+
+  const startEdit = (msg: Message) => {
+    if (msg.is_deleted) return;
+    setEditingId(msg.id);
+    setEditingText(msg.message);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+  };
+
+  const handleDelete = async (messageId: string) => {
+    if (!confirm("Delete this message?")) return;
+    try {
+      await deleteChatMessage(messageId);
+      console.log("🗑️ Delete requested");
+      // socket event will update state
+    } catch (err: any) {
+      console.error("Delete failed:", err);
+      alert(err?.message || "Failed to delete message");
     }
   };
 
@@ -163,7 +214,7 @@ export default function ConversationPage() {
         <div className="text-center">
           <p className="text-gray-600">No conversation selected</p>
           <button
-            onClick={() => router.push('/messages')}
+            onClick={() => router.push("/messages")}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Back to Messages
@@ -177,7 +228,7 @@ export default function ConversationPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading conversation...</p>
         </div>
       </div>
@@ -191,7 +242,7 @@ export default function ConversationPage() {
           <p className="font-semibold text-red-800">Error loading conversation</p>
           <p className="text-sm text-red-600 mt-2">{error}</p>
           <button
-            onClick={() => router.push('/messages')}
+            onClick={() => router.push("/messages")}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
             Back to Messages
@@ -201,63 +252,114 @@ export default function ConversationPage() {
     );
   }
 
+  const currentText = editingId ? editingText : input;
+
   return (
     <div className="flex h-screen flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
       <div className="bg-white border-b shadow-sm px-6 py-4">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push('/messages')}
+            onClick={() => router.push("/messages")}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <div className="flex-1">
             <h2 className="font-semibold text-gray-900">Conversation</h2>
             <p className="text-xs text-gray-500">
-              {messages.length} messages {socketReady && '• Connected'}
+              {messages.length} messages {socketReady && "• Connected"}
             </p>
           </div>
         </div>
       </div>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-gray-500 text-center">
-              No messages yet.<br />
+              No messages yet.
+              <br />
               <span className="text-sm">Start the conversation!</span>
             </p>
           </div>
         ) : (
           messages.map((m) => {
             const isOutgoing = m.sender_type === "candidate";
+            const isEditing = editingId === m.id;
+
             return (
-              <div key={m.id} className="flex w-full">
-                <div
-                  className={`
-                    max-w-[75%] rounded-2xl px-4 py-3 shadow-sm
-                    ${isOutgoing
-                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white ml-auto rounded-br-sm"
-                      : "bg-white text-gray-900 mr-auto rounded-bl-sm border border-gray-200"
-                    }
-                    ${m.is_deleted ? "opacity-60" : ""}
-                  `}
-                >
-                  <div className="whitespace-pre-wrap break-words text-sm">
-                    {m.is_deleted ? (
-                      <span className="italic text-xs opacity-75">Message deleted</span>
-                    ) : (
-                      m.message
-                    )}
+              <div
+                key={m.id}
+                className={`flex w-full ${
+                  isOutgoing ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div className="relative max-w-[75%]">
+                  <div
+                    className={`
+                      rounded-2xl px-4 py-3 shadow-sm
+                      ${
+                        isOutgoing
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-sm"
+                          : "bg-white text-gray-900 rounded-bl-sm border border-gray-200"
+                      }
+                      ${m.is_deleted ? "opacity-60" : ""}
+                    `}
+                  >
+                    <div className="whitespace-pre-wrap break-words text-sm">
+                      {m.is_deleted ? (
+                        <span className="italic text-xs opacity-75">
+                          Message deleted
+                        </span>
+                      ) : (
+                        m.message
+                      )}
+                    </div>
+                    <div
+                      className={`text-xs mt-1 ${
+                        isOutgoing ? "text-blue-100" : "text-gray-500"
+                      }`}
+                    >
+                      {new Date(m.created_at).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {isEditing && !m.is_deleted && (
+                        <span className="ml-2 italic opacity-80">editing…</span>
+                      )}
+                    </div>
                   </div>
-                  <div className={`text-xs mt-1 ${isOutgoing ? 'text-blue-100' : 'text-gray-500'}`}>
-                    {new Date(m.created_at).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
+
+                  {isOutgoing && !m.is_deleted && (
+                    <div className="absolute -top-4 right-1 flex gap-2 text-[10px] text-gray-500">
+                      <button
+                        className="hover:underline"
+                        onClick={() => startEdit(m)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="hover:underline"
+                        onClick={() => handleDelete(m.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -266,15 +368,21 @@ export default function ConversationPage() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input */}
       <div className="bg-white border-t shadow-lg p-4">
         <div className="flex gap-3 max-w-4xl mx-auto">
           <input
             className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+            value={currentText}
+            onChange={(e) =>
+              editingId ? setEditingText(e.target.value) : setInput(e.target.value)
+            }
+            placeholder={editingId ? "Edit message..." : "Type your message..."}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && editingId) {
+                cancelEdit();
+              }
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
               }
@@ -285,19 +393,28 @@ export default function ConversationPage() {
           <button
             className={`
               rounded-xl px-6 py-3 font-medium transition-all shadow-lg
-              ${sending || !input.trim()
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl hover:-translate-y-0.5"
+              ${
+                sending || !currentText.trim()
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl hover:-translate-y-0.5"
               }
             `}
             onClick={handleSend}
-            disabled={sending || !input.trim()}
+            disabled={sending || !currentText.trim()}
           >
-            {sending ? "Sending..." : "Send"}
+            {editingId ? "Save" : sending ? "Sending..." : "Send"}
           </button>
         </div>
         <div className="text-xs text-gray-500 text-center mt-2">
-          {input.length}/1000 characters
+          {currentText.length}/1000 characters
+          {editingId && (
+            <>
+              {" "}
+              • <button onClick={cancelEdit} className="underline">
+                Cancel edit
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

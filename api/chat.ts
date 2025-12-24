@@ -25,6 +25,20 @@ export async function sendMessage(conversationId: string, text: string) {
   return res.data.data;
 }
 
+// PUT /chat/message/:messageId
+export async function editChatMessage(messageId: string, message: string) {
+  const res = await apiClient.put(`${ENDPOINTS.CHAT.SEND_MESSAGE}/${messageId}`, {
+    message,
+  });
+  return res.data.data;
+}
+
+// DELETE /chat/message/:messageId
+export async function deleteChatMessage(messageId: string) {
+  const res = await apiClient.delete(`${ENDPOINTS.CHAT.SEND_MESSAGE}/${messageId}`);
+  return res.data.data;
+}
+
 // POST /chat/conversation - Create or get conversation
 export async function createOrGetConversation(recruiterId: string) {
   const profile = await getProfile();

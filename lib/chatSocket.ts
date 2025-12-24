@@ -6,48 +6,17 @@ let isInitializing = false;
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
 
 export const initChatSocket = async (): Promise<Socket | null> => {
-  if (socket?.connected) {
-    console.log('Socket already connected');
-    return socket;
-  }
-
-  if (isInitializing) {
-    console.log('Socket initialization in progress...');
-    return null;
-  }
+  if (socket?.connected) return socket;
+  if (isInitializing) return null;
 
   isInitializing = true;
 
   try {
-    console.log('Fetching socket token...');
-    const res = await fetch('http://localhost:4000/api/v1/common/socket-token', {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (!res.ok) {
-      console.warn('Failed to get socket token:', res.status);
-      isInitializing = false;
-      return null;
-    }
-
-    const data = await res.json();
-    const token = data.token;
-
-    if (!token) {
-      console.warn('No token in response');
-      isInitializing = false;
-      return null;
-    }
-
     console.log('Initializing candidate socket...');
     socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
-      withCredentials: true,
-      auth: {
-        token,
-        userType: 'candidate',
-      },
+      withCredentials: true,          // sends candidate_token cookie
+      auth: { userType: 'candidate' }, // optional, backend uses cookies
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -65,7 +34,6 @@ export const initChatSocket = async (): Promise<Socket | null> => {
       console.log('🔌 Candidate socket disconnected:', reason);
     });
 
-    // Wait for connection
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Socket connection timeout'));
@@ -92,9 +60,7 @@ export const initChatSocket = async (): Promise<Socket | null> => {
   }
 };
 
-export const getChatSocket = (): Socket | null => {
-  return socket;
-};
+export const getChatSocket = (): Socket | null => socket;
 
 export const disconnectSocket = () => {
   if (socket) {
