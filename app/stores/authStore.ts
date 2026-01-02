@@ -18,6 +18,13 @@ import {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_COUNTRY_CODE = '1';
 
+// 🎯 NEW: E.164 formatter for backend
+const formatPhoneE164 = (phone: string, countryCode: string = '91'): string => {
+  const clean = phone.replace(/\D/g, '');
+  if (/^[6789]\d{9}$/.test(clean)) return `+${countryCode}${clean}`;
+  return phone.startsWith('+') ? phone : `+${countryCode}${clean}`;
+};
+
 const OTP_ERROR_MESSAGES: Record<string, string> = {
   '429': 'Too many OTP requests. Please try again later.',
   '400': 'Invalid request. Please check your input.',
@@ -36,7 +43,11 @@ const resolveStatusMessage = (status: number | undefined, messages: Record<strin
 const isHttpSuccess = (status: number) => status >= 200 && status < 300;
 
 const isApiEnvelope = <T>(payload: unknown): payload is ApiEnvelope<T> =>
-  Boolean(payload && typeof payload === 'object' && ('success' in (payload as any) || 'message' in (payload as any)));
+  Boolean(
+    payload &&
+      typeof payload === 'object' &&
+      ('success' in (payload as any) || 'message' in (payload as any))
+  );
 
 const extractPayload = <T>(payload: any): T => {
   if (isApiEnvelope<T>(payload)) {
@@ -78,10 +89,10 @@ export const useAuthStore = create<AuthStore>()(
           const resolvedCountryCode =
             resolvedType === 'phone' ? countryCode || DEFAULT_COUNTRY_CODE : undefined;
 
-          const apiPayload =
-            resolvedType === 'email'
-              ? { email: target }
-              : { phone: target, country_code: resolvedCountryCode };
+          // 🎯 FIX: Backend expects E.164 phone (NO country_code)
+          const apiPayload = resolvedType === 'email'
+            ? { email: target }
+            : { phone: formatPhoneE164(target, resolvedCountryCode || '91') };  // +917098765432
 
           const responseData = await useApiStore.getState().post(
             ENDPOINTS.CANDIDATE.SEND_OTP,
@@ -96,10 +107,9 @@ export const useAuthStore = create<AuthStore>()(
             return { ok: false, message: errorMessage };
           }
 
-          const credential: OtpCredential =
-            resolvedType === 'email'
-              ? { type: 'email', email: target }
-              : { type: 'phone', phone: target, countryCode: resolvedCountryCode ?? null };
+          const credential: OtpCredential = resolvedType === 'email'
+            ? { type: 'email', email: target }
+            : { type: 'phone', phone: apiPayload.phone as string, countryCode: resolvedCountryCode ?? null };
 
           const payload: OtpRequestPayload = {
             target,
@@ -131,14 +141,10 @@ export const useAuthStore = create<AuthStore>()(
           return { ok: false, message: 'OTP session expired. Please resend the code.' };
         }
 
-        const payload =
-          otpCredential.type === 'email'
-            ? { email: otpCredential.email, otp: code }
-            : {
-                phone: otpCredential.phone,
-                otp: code,
-                country_code: otpCredential.countryCode ?? undefined,
-              };
+        // 🎯 FIX: Backend expects E.164 phone (NO country_code)
+        const payload = otpCredential.type === 'email'
+          ? { email: otpCredential.email, otp: code }
+          : { phone: otpCredential.phone, otp: code };  // E.164 format
 
         try {
           const res = await useApiStore.getState().post(
@@ -153,7 +159,7 @@ export const useAuthStore = create<AuthStore>()(
             return { ok: false, message: json?.message || 'Invalid OTP' };
           }
 
-          // session is handled by backend cookies; just set userType in memory
+          // Backend sets cookies; track userType in memory
           set({ userType: 'candidate' });
 
           return { ok: true, data: json.data };
